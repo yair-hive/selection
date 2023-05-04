@@ -1,7 +1,7 @@
 /* eslint-disable no-use-before-define */
 import VanillaSelectionArea from '@viselect/vanilla';
 import {SelectionEvents, SelectionOptions} from '@viselect/vanilla';
-import React, {createRef, useEffect} from 'react';
+import React, {createRef, useEffect, createContext, useContext, useState} from 'react';
 
 export interface SelectionAreaProps extends Omit<Partial<SelectionOptions>, 'boundaries'>, React.HTMLAttributes<HTMLDivElement> {
     id?: string;
@@ -13,8 +13,16 @@ export interface SelectionAreaProps extends Omit<Partial<SelectionOptions>, 'bou
     onStop?: SelectionEvents['stop'];
 }
 
+const SelectionContext = createContext<Object | undefined>(undefined);
+
+export function useSelection(){
+    return useContext(SelectionContext)
+}
+
 export const SelectionArea: React.FunctionComponent<SelectionAreaProps> = props => {
+    
     const root = createRef<HTMLDivElement>();
+    const [selectionState, setSelection] = useState<Object | undefined>(undefined)
 
     useEffect(() => {
         const {onBeforeStart, onBeforeDrag, onStart, onMove, onStop, ...opt} = props;
@@ -31,12 +39,16 @@ export const SelectionArea: React.FunctionComponent<SelectionAreaProps> = props 
         onMove && selection.on('move', onMove);
         onStop && selection.on('stop', onStop);
 
+        setSelection(selection)
+
         return () => selection.destroy();
     }, []);
 
     return (
-        <div ref={root} className={props.className} id={props.id}>
-            {props.children}
-        </div>
+        <SelectionContext.Provider value={selectionState}>
+            <div ref={root} className={props.className} id={props.id}>
+                {props.children}
+            </div>
+        </SelectionContext.Provider>
     );
 };
